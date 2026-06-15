@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Jobs\SendWaTemplateJob;
 use App\Models\Device;
 use App\Models\DeviceAlert;
+use App\Services\WhatsApp\CctvAlertMessageFactory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -76,6 +78,7 @@ class AlertService
         );
 
         $this->sendTelegram($text);
+        $this->sendWa($device, $alert, false);
 
         $alert->update(['notified_at' => now()]);
     }
@@ -93,6 +96,35 @@ class AlertService
         );
 
         $this->sendTelegram($text);
+        $this->sendWa($device, $alert, true);
+    }
+
+    /**
+     * Kirim notifikasi WA (template ticket_notify_any, sama seperti SHM Check)
+     * ke semua nomor di config('whatsapp.recipients.cctv_numbers').
+     */
+    protected function sendWa(Device $device, DeviceAlert $alert, bool $resolved): void
+    {
+        $numbers = config('whatsapp.recipients.cctv_numbers', []);
+
+        if (empty($numbers)) {
+            return;
+        }
+
+        $template = config('whatsapp.defaults.ticket_template', 'ticket_notify_any');
+        $factory = new CctvAlertMessageFactory();
+
+        $vars = $resolved
+            ? $factory->buildResolvedVars($device, $alert)
+            : $factory->buildAlertVars($device, $alert);
+
+        foreach ($numbers as $number) {
+            try {
+                SendWaTemplateJob::dispatch($number, $template, $vars, ['to_name' => 'Tim IT'])->onQueue('wa');
+            } catch (\Throwable $e) {
+                Log::warning('Gagal dispatch WA alert: ' . $e->getMessage());
+            }
+        }
     }
 
     protected function sendTelegram(string $text): void
