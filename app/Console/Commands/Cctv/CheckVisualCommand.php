@@ -64,6 +64,7 @@ class CheckVisualCommand extends Command
             'flags' => $analysis['flags'],
             'brightness_avg' => $analysis['brightness_avg'],
             'diff_from_previous' => $analysis['diff_from_previous'],
+            'samples' => $analysis['samples'],
             'captured_at' => now(),
         ]);
 
@@ -114,6 +115,7 @@ class CheckVisualCommand extends Command
                 'flags' => ['no_signal'],
                 'brightness_avg' => null,
                 'diff_from_previous' => null,
+                'samples' => null,
             ];
         }
 
@@ -163,16 +165,28 @@ class CheckVisualCommand extends Command
             $flags[] = 'blank';
         }
 
-        // Bandingkan dengan snapshot sebelumnya untuk deteksi freeze
+        // Bandingkan per-pixel dengan snapshot sebelumnya untuk deteksi freeze
         $diff = null;
         $previous = $device->snapshots()->latest('captured_at')->first();
 
         if ($previous && $previous->brightness_avg !== null) {
             $diff = abs($avg - (float) $previous->brightness_avg);
+        }
 
-            $freezeDiffThreshold = (float) config('cctv.visual.freeze_diff_threshold', 1.0);
+        if ($previous && !empty($previous->samples) && count($previous->samples) === $count && $count > 0) {
+            $pixelDiffThreshold = (float) config('cctv.visual.freeze_pixel_diff_threshold', 2.0);
+            $freezeRatioThreshold = (float) config('cctv.visual.freeze_ratio_threshold', 0.97);
 
-            if ($diff <= $freezeDiffThreshold && empty($flags)) {
+            $unchanged = 0;
+            foreach ($samples as $i => $value) {
+                if (abs($value - $previous->samples[$i]) <= $pixelDiffThreshold) {
+                    $unchanged++;
+                }
+            }
+
+            $unchangedRatio = $unchanged / $count;
+
+            if ($unchangedRatio >= $freezeRatioThreshold && empty($flags)) {
                 $flags[] = 'freeze';
             }
         }
@@ -181,6 +195,7 @@ class CheckVisualCommand extends Command
             'flags' => $flags,
             'brightness_avg' => round($avg, 3),
             'diff_from_previous' => $diff !== null ? round($diff, 4) : null,
+            'samples' => $samples,
         ];
     }
 

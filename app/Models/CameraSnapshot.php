@@ -13,6 +13,7 @@ class CameraSnapshot extends Model
         'flags',
         'brightness_avg',
         'diff_from_previous',
+        'samples',
         'captured_at',
     ];
 
@@ -20,6 +21,7 @@ class CameraSnapshot extends Model
         'flags' => 'array',
         'brightness_avg' => 'float',
         'diff_from_previous' => 'float',
+        'samples' => 'array',
         'captured_at' => 'datetime',
     ];
 
