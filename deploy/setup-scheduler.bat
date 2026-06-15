@@ -18,13 +18,19 @@ schtasks /Create /TN "CCTV-WebServer" /SC ONSTART ^
   /TR "\"%PROJECT_DIR%\deploy\run-server.bat\"" ^
   /RU SYSTEM /RL HIGHEST /F
 
+echo Membuat task "CCTV-QueueWorker" (jalan otomatis saat PC startup, proses notifikasi WA)...
+schtasks /Create /TN "CCTV-QueueWorker" /SC ONSTART ^
+  /TR "\"%PROJECT_DIR%\deploy\run-queue.bat\"" ^
+  /RU SYSTEM /RL HIGHEST /F
+
 echo.
 echo ============================================
 echo  SELESAI.
-echo  - Task "CCTV-Checker"  : cek network/service/visual tiap menit (sesuai schedule di routes/console.php)
-echo  - Task "CCTV-WebServer": jalankan web dashboard di http://[IP-PC-ini]:8123
+echo  - Task "CCTV-Checker"   : cek network/service/visual tiap menit (sesuai schedule di routes/console.php)
+echo  - Task "CCTV-WebServer" : jalankan web dashboard di http://[IP-PC-ini]:8123
+echo  - Task "CCTV-QueueWorker": proses notifikasi WhatsApp (queue: wa)
 echo
 echo  Cek status: buka "Task Scheduler" di Windows, lihat folder Task Scheduler Library.
-echo  Untuk hapus: schtasks /Delete /TN "CCTV-Checker" /F  dan  schtasks /Delete /TN "CCTV-WebServer" /F
+echo  Untuk hapus: schtasks /Delete /TN "CCTV-Checker" /F ^&^& schtasks /Delete /TN "CCTV-WebServer" /F ^&^& schtasks /Delete /TN "CCTV-QueueWorker" /F
 echo ============================================
 pause
