@@ -111,7 +111,8 @@ class AlertService
             return;
         }
 
-        $template = config('whatsapp.defaults.ticket_template', 'ticket_notify_any');
+        $templateName = config('whatsapp.defaults.ticket_template', 'ticket_notify_any');
+        $template = config("whatsapp.qontak.templates.{$templateName}") ?: $templateName;
         $factory = new CctvAlertMessageFactory();
 
         $vars = $resolved
