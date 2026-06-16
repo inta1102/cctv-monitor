@@ -119,9 +119,16 @@ class AlertService
             ? $factory->buildResolvedVars($device, $alert)
             : $factory->buildAlertVars($device, $alert);
 
+        $meta = [
+            'to_name' => 'Tim IT',
+            'buttons' => [
+                ['index' => '0', 'type' => 'url', 'value' => 'cctv-alert'],
+            ],
+        ];
+
         foreach ($numbers as $number) {
             try {
-                SendWaTemplateJob::dispatch($number, $template, $vars, ['to_name' => 'Tim IT'])->onQueue('wa');
+                SendWaTemplateJob::dispatch($number, $template, $vars, $meta)->onQueue('wa');
             } catch (\Throwable $e) {
                 Log::warning('Gagal dispatch WA alert: ' . $e->getMessage());
             }
