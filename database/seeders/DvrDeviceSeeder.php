@@ -35,7 +35,7 @@ class DvrDeviceSeeder extends Seeder
 
     const DVR2_IP       = '200.16.1.249';
     const DVR2_USER     = 'admin';
-    const DVR2_PASS     = 'MSAdvr1234'; // Ganti jika password berbeda
+    const DVR2_PASS     = 'admin1234'; // Ganti jika password berbeda
     const DVR2_LOCATION = 'Server02';
     // =========================================================
 
