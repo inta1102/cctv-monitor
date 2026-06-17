@@ -72,6 +72,12 @@
             <input type="text" name="rtsp_path" value="{{ old('rtsp_path', $device->rtsp_path) }}"
                    class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="/Streaming/Channels/101">
         </div>
+        <div class="mt-3">
+            <label class="text-xs font-bold text-slate-600">Snapshot URL (HTTP ISAPI)</label>
+            <input type="text" name="snapshot_url" value="{{ old('snapshot_url', $device->snapshot_url) }}"
+                   class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="http://192.168.x.x/ISAPI/Streaming/channels/101/picture">
+            <p class="mt-1 text-xs text-slate-400">Isi untuk DVR Hikvision (ISAPI). Kosongkan jika pakai RTSP.</p>
+        </div>
     </div>
 
     <div class="rounded-xl border border-slate-100 bg-slate-50 p-3">

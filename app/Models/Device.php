@@ -15,6 +15,7 @@ class Device extends Model
         'rtsp_port',
         'onvif_port',
         'rtsp_path',
+        'snapshot_url',
         'snapshot_enabled',
         'snapshot_username',
         'snapshot_password',

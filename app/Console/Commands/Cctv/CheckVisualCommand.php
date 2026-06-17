@@ -32,13 +32,6 @@ class CheckVisualCommand extends Command
 
     protected function checkDevice(Device $device, AlertService $alerts): void
     {
-        $rtspUrl = $device->rtspUrl($device->snapshot_username, $device->snapshot_password);
-
-        if (!$rtspUrl) {
-            $this->warn("[SKIP] {$device->name}: RTSP belum dikonfigurasi.");
-            return;
-        }
-
         $relativePath = 'cctv-snapshots/' . $device->id . '/' . now()->format('Ymd_His') . '.jpg';
         $fullPath = storage_path('app/public/' . $relativePath);
 
@@ -46,7 +39,18 @@ class CheckVisualCommand extends Command
             mkdir(dirname($fullPath), 0755, true);
         }
 
-        $captured = $this->captureFrame($rtspUrl, $fullPath);
+        // Gunakan HTTP snapshot (ISAPI) jika snapshot_url diisi, fallback ke RTSP+ffmpeg
+        if (!empty($device->snapshot_url)) {
+            $captured = $this->captureViaHttp($device, $fullPath);
+        } else {
+            $rtspUrl = $device->rtspUrl($device->snapshot_username, $device->snapshot_password);
+            if (!$rtspUrl) {
+                $this->warn("[SKIP] {$device->name}: RTSP belum dikonfigurasi.");
+                return;
+            }
+            $captured = $this->captureFrame($rtspUrl, $fullPath);
+        }
+
 
         if (!$captured) {
             $this->recordResult($device, $alerts, 'no_signal', 'abnormal', ['no_signal'], null, null, null, 'Gagal mengambil snapshot dari RTSP (no signal).');
@@ -96,6 +100,40 @@ class CheckVisualCommand extends Command
         } catch (\Throwable $e) {
             return false;
         }
+    }
+
+    /**
+     * Ambil snapshot via HTTP ISAPI (Hikvision DVR/NVR).
+     * Gunakan ini untuk kamera yang RTSP H.265+ tidak bisa di-decode ffmpeg.
+     */
+    protected function captureViaHttp(Device $device, string $outputPath): bool
+    {
+        $url = $device->snapshot_url;
+        $username = $device->snapshot_username;
+        $password = $device->snapshot_password;
+        $timeout = (int) config('cctv.ffmpeg_timeout', 30);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => $timeout,
+            CURLOPT_HTTPAUTH       => CURLAUTH_DIGEST,
+            CURLOPT_USERPWD        => "{$username}:{$password}",
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+        ]);
+
+        $data = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($data === false || $httpCode !== 200 || strlen($data) < 1000) {
+            return false;
+        }
+
+        file_put_contents($outputPath, $data);
+        return file_exists($outputPath) && filesize($outputPath) > 1000;
     }
 
     /**

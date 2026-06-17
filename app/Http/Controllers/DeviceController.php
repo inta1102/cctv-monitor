@@ -86,6 +86,7 @@ class DeviceController extends Controller
             'rtsp_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'onvif_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'rtsp_path' => ['nullable', 'string', 'max:255'],
+            'snapshot_url' => ['nullable', 'url', 'max:500'],
             'snapshot_enabled' => ['nullable', 'boolean'],
             'snapshot_username' => ['nullable', 'string', 'max:100'],
             'snapshot_password' => ['nullable', 'string', 'max:100'],
