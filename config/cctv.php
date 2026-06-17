@@ -13,6 +13,9 @@ return [
     // Path binary ffmpeg untuk ambil snapshot RTSP
     'ffmpeg_path' => env('CCTV_FFMPEG_PATH', 'ffmpeg'),
 
+    // Timeout khusus untuk ffmpeg capture snapshot (detik) — bisa lebih lama dari check_timeout
+    'ffmpeg_timeout' => env('CCTV_FFMPEG_TIMEOUT', 30),
+
     // Threshold visual health check
     'visual' => [
         // rata-rata brightness (0-255) di bawah ini dianggap gelap total

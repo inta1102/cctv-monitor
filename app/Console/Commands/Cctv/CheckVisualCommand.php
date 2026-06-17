@@ -77,24 +77,22 @@ class CheckVisualCommand extends Command
     protected function captureFrame(string $rtspUrl, string $outputPath): bool
     {
         $ffmpeg = config('cctv.ffmpeg_path', 'ffmpeg');
-        $timeout = (int) config('cctv.check_timeout', 3) + 5;
+        $timeout = (int) config('cctv.ffmpeg_timeout', 30);
 
-        $cmd = [
+        // Gunakan shell_exec agar compatible dengan RTSP stream di Windows
+        // -stimeout: socket timeout (microseconds), -analyzeduration/-probesize: percepat probe
+        $stimeoutUs = $timeout * 1_000_000;
+        $cmd = sprintf(
+            '"%s" -y -rtsp_transport tcp -timeout %d -analyzeduration 2000000 -probesize 500000 -i %s -vframes 1 -q:v 2 %s 2>&1',
             $ffmpeg,
-            '-y',
-            '-rtsp_transport', 'tcp',
-            '-i', $rtspUrl,
-            '-vframes', '1',
-            '-q:v', '2',
-            $outputPath,
-        ];
+            $stimeoutUs,
+            escapeshellarg($rtspUrl),
+            escapeshellarg($outputPath)
+        );
 
         try {
-            $process = new Process($cmd);
-            $process->setTimeout($timeout);
-            $process->run();
-
-            return $process->isSuccessful() && file_exists($outputPath) && filesize($outputPath) > 0;
+            shell_exec($cmd);
+            return file_exists($outputPath) && filesize($outputPath) > 1000;
         } catch (\Throwable $e) {
             return false;
         }
